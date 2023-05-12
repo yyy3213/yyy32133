@@ -1,1 +1,69 @@
-wadawdaweqwe
+import socket  
+import threading  
+import os
+
+HOST = ''  # 聊天室主机地址  
+PORT = 5555  # 聊天室端口号
+
+class ChatRoom:  
+    def __init__(self):  
+        self.users = []  
+        self.mutex = threading.Lock()  
+        self.message_queue = []
+
+    def add_user(self, user):  
+        with self.mutex:  
+            self.users.append(user)
+
+    def remove_user(self, user):  
+        with self.mutex:  
+            self.users.remove(user)
+
+    def send_message(self, user, message):  
+        with self.mutex:  
+            for u in self.users:  
+                if u == user:  
+                    self.message_queue.append(message)  
+                    break
+
+    def receive_messages(self):  
+        while True:  
+            message = self.message_queue.pop(0)  
+            for user in self.users:  
+                user.send_message(message)
+
+    def join(self, user):  
+        with self.mutex:  
+            self.users.append(user)  
+            user.join_thread()
+
+    def leave(self, user):  
+        with self.mutex:  
+            self.users.remove(user)  
+            user.leave_thread()
+
+    def start(self):  
+        while True:  
+            message = input("请输入您想说的话:")  
+            for user in self.users:  
+                user.send_message(message)
+
+        self.join_thread().join()  
+        self.leave_thread().join()
+
+if __name__ == '__main__':  
+    chat_room = ChatRoom()
+
+    while True:  
+        command = input("请输入您的命令 (join/leave/send):")  
+        if command == 'join':  
+            user = input("请输入您的名字:")  
+            chat_room.join(user)  
+        elif command == 'leave':  
+            chat_room.leave(input("请输入您的名字:"))  
+        elif command == 'send':  
+            message = input("请输入您想说的话:")  
+            chat_room.send_message(input("请输入您的名字:"), message)  
+        else:  
+            print("无效的命令")  
+
